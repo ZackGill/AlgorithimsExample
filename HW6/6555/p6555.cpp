@@ -1,0 +1,247 @@
+//
+//  6555-Cryptography
+//
+
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+unordered_map<char, pair<int, int>> quickGrid;
+char grid[5][5];
+
+void setGrid(string &key) {
+	quickGrid.clear();
+
+	int pos = 0;
+	char next = 'A';
+	string local = "";
+	// Caps, letters only,
+	for (int b = 0; b < key.length(); b++) {
+		if (key[b] == ' ') {
+			continue;
+		}
+		if (key[b] >= 65 && key[b] <= 90) {
+			if (key[b] == 'J') {
+				local += 'I';
+			} else
+				local += key[b];
+		} else if (key[b] >= 97 && key[b] <= 172) {
+			if (key[b] == 'j') {
+				local += 'I';
+			} else
+				local += key[b] - 32;
+		}
+
+	}
+
+	int row = 0;
+	int col = 0;
+	bool madeInsert = false;
+	while (quickGrid.size() < 30) {
+		madeInsert = false;
+
+		if (pos >= local.length()) {
+			quickGrid.erase('J');
+			auto temp2 = quickGrid.emplace(next, make_pair(row, col));
+			for (int c = 26; c > 0; c--) {
+				if (next == 'J') {
+					next = 'K';
+					temp2 = quickGrid.emplace(next, make_pair(row, col));
+				}
+				if (temp2.second == true) {
+					grid[row][col] = next;
+					madeInsert = true;
+					next++;
+					break;
+				}
+				next++;
+				temp2 = quickGrid.emplace(next, make_pair(row, col));
+			}
+		}
+
+		else {
+			auto temp = quickGrid.emplace(local[pos], make_pair(row, col));
+			// Not duplicate
+			if (temp.second == true) {
+				grid[row][col] = local[pos];
+				madeInsert = true;
+			}
+		}
+		pos++;
+		if (madeInsert) {
+			col++;
+			if (col == 5) {
+				row++;
+				col = col % 5;
+			}
+		}
+	}
+
+}
+
+vector<string> diagraphMaker(string &text) {
+
+	for (int i = 0; i < text.length(); i++) {
+		text[i] = toupper(text[i]);
+		if (text[i] > 90 || text[i] < 65)
+			text[i] = ' ';
+	}
+
+	vector<string> result;
+	string temp = "";
+	char subLetter = 'A';
+	string sub = "";
+	string local = text;
+
+	if (text.length() == 1) {
+		if (subLetter == text[0]) {
+			subLetter++;
+		}
+		text.append(1, subLetter);
+		result.push_back(text);
+		return result;
+	}
+
+	auto iter = remove(local.begin(), local.end(), ' ');
+	local.erase(iter, local.end());
+
+	for (int i = 0; i < local.size(); i += 2) {
+		sub = local.substr(i, 2);
+		if (sub[0] == sub[1]) {
+			if (subLetter == 'J') {
+				subLetter++;
+			}
+			if (subLetter > 'Z') {
+				subLetter = 'A';
+			}
+			if (subLetter == sub[0]) {
+				subLetter++;
+			}
+			if (subLetter == 'J') {
+				subLetter++;
+			}
+			if (subLetter > 'Z') {
+				subLetter = 'A';
+			}
+			if (subLetter == sub[0]) {
+				subLetter++;
+			}
+			local.insert(i + 1, 1, subLetter);
+			i -= 2;
+			subLetter++;
+			if (subLetter == 'J') {
+				subLetter++;
+			}
+			continue;
+		} else if (sub.length() == 1) {
+			if (subLetter == sub[0]) {
+				subLetter++;
+			}
+			if (subLetter > 'Z') {
+				subLetter = 'A';
+			}
+			if (subLetter == 'J') {
+				subLetter++;
+			}
+			sub += subLetter;
+			subLetter++;
+		}
+		result.push_back(sub);
+	}
+
+	return result;
+}
+
+string encrypt(vector<string> &diagraph) {
+	string result = "";
+	pair<int, int> firstPair;
+	pair<int, int> secondPair;
+	char firstEn, secondEn;
+	for (auto a : diagraph) {
+		firstPair = quickGrid[a[0]];
+		secondPair = quickGrid[a[1]];
+		/* Same row */
+		if (firstPair.first == secondPair.first) {
+			if (firstPair.second == 4)
+				firstEn = grid[firstPair.first][0];
+			else if (firstPair.second < 4)
+				firstEn = grid[firstPair.first][firstPair.second + 1];
+			if (secondPair.second == 4)
+				secondEn = grid[secondPair.first][0];
+			else
+				secondEn = grid[secondPair.first][secondPair.second + 1];
+		}
+		/* Same Col */
+		if (firstPair.second == secondPair.second) {
+			if (firstPair.first == 4)
+				firstEn = grid[0][firstPair.second];
+			else
+				firstEn = grid[firstPair.first + 1][firstPair.second];
+			if (secondPair.first == 4)
+				secondEn = grid[0][secondPair.second];
+			else
+				secondEn = grid[secondPair.first + 1][secondPair.second];
+		}
+		/* Diff places */
+		else if (firstPair.first != secondPair.first
+				&& firstPair.second != secondPair.second) {
+			firstEn = grid[firstPair.first][secondPair.second];
+			secondEn = grid[secondPair.first][firstPair.second];
+		}
+		result = result + firstEn + secondEn;
+	}
+
+	return result;
+}
+
+int main(int argc, const char * argv[]) {
+//#ifndef ONLINE_JUDGE
+//	istringstream input("1\n"
+//			"ez(h)(R]y5P'&s\n"
+//			"V%vX=dVb!\n");
+//#else
+	istream& input = cin;
+//#endif
+	int n;
+	input >> n >> ws;
+
+	vector<string> results;
+	string output;
+	vector<string> dia;
+	string key, plain_text;
+	for (int k = 0; k < n; k++) {
+
+		getline(input, key);
+		getline(input, plain_text);
+//#ifndef ONLINE_JUDGE
+//		cout << "Key" << key << endl;
+//		cout << "Text" << plain_text << endl;
+//#endif
+		/* add your code here */
+		setGrid(key);
+		dia = diagraphMaker(plain_text);
+
+		output = encrypt(dia);
+		results.push_back(output);
+		quickGrid.clear();
+	}
+///	for (int i = 0; i < 5; i++) {
+//		for (int a = 0; a < 5; a++) {
+////			cout << grid[i][a];
+//		}
+//	}
+//	cout << endl;
+//	for (auto d : dia) {
+//		cout << d << " ";
+//	}
+//	cout << endl;
+	for (int i = 0; i < results.size(); i++) {
+		cout << "Case " << i + 1 << ": " << results[i] << endl;
+	}
+
+	return 0;
+}
